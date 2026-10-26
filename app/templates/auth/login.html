@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card card-custom p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
+                        <i class="bi bi-shield-lock-fill fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold">Welcome Back</h3>
+                    <p class="text-muted small">Sign in to manage your budget and financial goals</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Email Field -->
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                            {{ form.email(class="form-control border-start-0" + (" is-invalid" if form.email.errors else "")) }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            {{ form.password.label(class="form-label fw-semibold small") }}
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-key"></i>
+                            </span>
+                            {{ form.password(class="form-control border-start-0" + (" is-invalid" if form.password.errors else "")) }}
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.password.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Remember Me Checkbox -->
+                    <div class="mb-4 form-check">
+                        {{ form.remember_me(class="form-check-input") }}
+                        {{ form.remember_me.label(class="form-check-label small text-muted") }}
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mb-3">
+                        {{ form.submit(class="btn btn-primary-custom py-2 fw-semibold") }}
+                    </div>
+                </form>
+
+                <div class="text-center pt-3 border-top">
+                    <p class="text-muted small mb-0">
+                        Don't have an account? 
+                        <a href="{{ url_for('auth.register') }}" class="text-primary fw-semibold text-decoration-none">
+                            Sign up here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

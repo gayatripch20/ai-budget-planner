@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold mb-1">Financial Dashboard</h2>
+            <p class="text-muted mb-0">
+                Welcome back, <span class="fw-semibold text-dark">{{ current_user.full_name }}</span>! Here is your personal financial overview.
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                <i class="bi bi-shield-check me-1"></i> Session Active ({{ currency }})
+            </span>
+        </div>
+    </div>
+
+    <!-- Quick Stats Placeholder for Phase 4 (Fully wired in Phase 7) -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small text-uppercase fw-semibold mb-1">Total Income (MTD)</div>
+                <h3 class="fw-bold text-success mb-0">{{ currency }} 0.00</h3>
+                <small class="text-muted">Updated today</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small text-uppercase fw-semibold mb-1">Total Expenses (MTD)</div>
+                <h3 class="fw-bold text-danger mb-0">{{ currency }} 0.00</h3>
+                <small class="text-muted">Updated today</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small text-uppercase fw-semibold mb-1">Net Balance</div>
+                <h3 class="fw-bold text-primary mb-0">{{ currency }} 0.00</h3>
+                <small class="text-muted">Current surplus</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small text-uppercase fw-semibold mb-1">Active Goals</div>
+                <h3 class="fw-bold text-info mb-0">0</h3>
+                <small class="text-muted">Milestones tracked</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ready for Modules 5 & 6 Callout -->
+    <div class="card card-custom p-4 text-center">
+        <div class="py-3">
+            <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
+                <i class="bi bi-check2-all fs-2"></i>
+            </div>
+            <h4 class="fw-bold">Authentication & Session System Initialized</h4>
+            <p class="text-muted mx-auto" style="max-width: 600px;">
+                Your account is securely logged in with session isolation. In the next phases, we will add income & expense management, budget limits, and financial goal tracking!
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

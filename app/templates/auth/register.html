@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-custom p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
+                        <i class="bi bi-person-plus-fill fs-3"></i>
+                    </div>
+                    <h3 class="fw-bold">Create Your Account</h3>
+                    <p class="text-muted small">Start planning your personal finances and tracking goals</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Full Name -->
+                    <div class="mb-3">
+                        {{ form.full_name.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            {{ form.full_name(class="form-control border-start-0" + (" is-invalid" if form.full_name.errors else "")) }}
+                            {% if form.full_name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.full_name.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                            {{ form.email(class="form-control border-start-0" + (" is-invalid" if form.email.errors else "")) }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.email.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Preferred Currency -->
+                    <div class="mb-3">
+                        {{ form.currency.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                <i class="bi bi-currency-exchange"></i>
+                            </span>
+                            {{ form.currency(class="form-select border-start-0" + (" is-invalid" if form.currency.errors else "")) }}
+                            {% if form.currency.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.currency.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Password and Confirm Password in two columns -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.password.label(class="form-label fw-semibold small") }}
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                {{ form.password(class="form-control border-start-0" + (" is-invalid" if form.password.errors else "")) }}
+                                {% if form.password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.password.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.confirm_password.label(class="form-label fw-semibold small") }}
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    <i class="bi bi-check2-circle"></i>
+                                </span>
+                                {{ form.confirm_password(class="form-control border-start-0" + (" is-invalid" if form.confirm_password.errors else "")) }}
+                                {% if form.confirm_password.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.confirm_password.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid mb-3 mt-2">
+                        {{ form.submit(class="btn btn-primary-custom py-2 fw-semibold") }}
+                    </div>
+                </form>
+
+                <div class="text-center pt-3 border-top">
+                    <p class="text-muted small mb-0">
+                        Already have an account? 
+                        <a href="{{ url_for('auth.login') }}" class="text-primary fw-semibold text-decoration-none">
+                            Log in here
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

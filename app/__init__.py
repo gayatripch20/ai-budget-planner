@@ -45,6 +45,15 @@ def create_app(config_name: str | None = None) -> Flask:
             "app_name": "AI Budget Planner",
         }
 
+    # Register Blueprints
+    from app.routes.main import main_bp
+    from app.routes.auth import auth_bp
+    from app.routes.dashboard import dashboard_bp
+
+    app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+
     # Register CLI seed command for database initial categories
     register_cli_commands(app)
 
