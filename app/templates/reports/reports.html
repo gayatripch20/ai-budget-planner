@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Statements & Reports{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Action Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-file-earmark-bar-graph text-primary me-2"></i> Financial Audit Reports
+            </h2>
+            <p class="text-muted mb-0">Generate, audit, and export official financial statements in CSV and PDF formats</p>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('reports.export_csv', start_date=start_date, end_date=end_date, type=trans_type) }}" class="btn btn-outline-success fw-semibold">
+                <i class="bi bi-filetype-csv me-1"></i> Export CSV
+            </a>
+            <a href="{{ url_for('reports.export_pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-primary-custom fw-semibold">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter Form -->
+    <div class="card card-custom p-3 mb-4">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Transaction Type</label>
+                <select name="type" class="form-select form-select-sm">
+                    <option value="all" {% if trans_type == 'all' %}selected{% endif %}>All Types</option>
+                    <option value="income" {% if trans_type == 'income' %}selected{% endif %}>Income Only</option>
+                    <option value="expense" {% if trans_type == 'expense' %}selected{% endif %}>Expenses Only</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-1">
+                <button type="submit" class="btn btn-primary-custom btn-sm flex-grow-1">
+                    <i class="bi bi-filter me-1"></i> Generate Report
+                </button>
+                <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm" title="Reset">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- 4 KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Total Income</span>
+                <h3 class="fw-bold text-success mb-1">{{ currency }} {{ "%.2f"|format(total_income) }}</h3>
+                <small class="text-muted">Filtered period</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Total Expenses</span>
+                <h3 class="fw-bold text-danger mb-1">{{ currency }} {{ "%.2f"|format(total_expenses) }}</h3>
+                <small class="text-muted">Filtered period</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Net Savings Balance</span>
+                <h3 class="fw-bold {% if net_savings >= 0 %}text-primary{% else %}text-danger{% endif %} mb-1">
+                    {{ currency }} {{ "%.2f"|format(net_savings) }}
+                </h3>
+                <small class="text-muted">Surplus retention</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Savings Rate</span>
+                <h3 class="fw-bold text-info mb-1">{{ savings_rate }}%</h3>
+                <small class="text-muted">Net savings / Income</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Breakdown Table -->
+    {% if cat_breakdown %}
+    <div class="card card-custom overflow-hidden mb-4">
+        <div class="p-3 bg-white border-bottom">
+            <h5 class="fw-bold mb-0">Category Breakdown Analysis</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Category</th>
+                        <th>Type</th>
+                        <th class="text-center">Transactions</th>
+                        <th class="text-end pe-4">Total Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cat_breakdown %}
+                    <tr>
+                        <td class="ps-4">
+                            <span class="badge rounded-pill me-2" style="background-color: {{ c.color }}; width: 10px; height: 10px; display: inline-block;"></span>
+                            <span class="fw-semibold text-dark">{{ c.name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge {% if c.type == 'income' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                {{ c.type|capitalize }}
+                            </span>
+                        </td>
+                        <td class="text-center text-muted">{{ c.tx_count }}</td>
+                        <td class="text-end pe-4 fw-bold {% if c.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                            {% if c.type == 'income' %}+{% else %}-{% endif %}{{ currency }} {{ "%.2f"|format(c.total_amount) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Detailed Transactions Table -->
+    <div class="card card-custom overflow-hidden">
+        <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Transaction Audit Ledger ({{ transactions|length }} Records)</h5>
+            <small class="text-muted">Filtered results ready for export</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Payment Method</th>
+                        <th>Description</th>
+                        <th class="text-end pe-4">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if transactions %}
+                        {% for tx in transactions %}
+                        <tr>
+                            <td class="ps-4 text-muted small text-nowrap">{{ tx.transaction_date.strftime('%d-%m-%Y') }}</td>
+                            <td>
+                                <span class="badge {% if tx.transaction_type == 'income' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %}">
+                                    {{ tx.transaction_type|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-medium text-dark">{{ tx.category.name if tx.category else '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ tx.payment_method }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small">{{ tx.description or '—' }}</span>
+                            </td>
+                            <td class="text-end pe-4 fw-bold text-nowrap">
+                                {% if tx.transaction_type == 'income' %}
+                                    <span class="text-success">+{{ currency }} {{ "%.2f"|format(tx.amount) }}</span>
+                                {% else %}
+                                    <span class="text-danger">-{{ currency }} {{ "%.2f"|format(tx.amount) }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-file-earmark-x fs-1 d-block mb-2 text-secondary"></i>
+                                <h6 class="fw-semibold">No Transactions Found In Selected Range</h6>
+                                <p class="small mb-0">Adjust your date filters or record new transactions.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
