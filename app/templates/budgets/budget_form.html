@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Budget{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5">
+            <div class="card card-custom p-4 p-md-5">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle me-3">
+                        <i class="bi bi-pie-chart-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">{{ action }} Monthly Budget</h4>
+                        <span class="text-muted small">Define category spending limits to prevent overspending</span>
+                    </div>
+                </div>
+
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- Category -->
+                    <div class="mb-3">
+                        {{ form.category_id.label(class="form-label fw-semibold small") }}
+                        {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
+                        {% if form.category_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.category_id.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Month and Year -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.month.label(class="form-label fw-semibold small") }}
+                            {{ form.month(class="form-select" + (" is-invalid" if form.month.errors else "")) }}
+                            {% if form.month.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.month.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.year.label(class="form-label fw-semibold small") }}
+                            {{ form.year(class="form-control" + (" is-invalid" if form.year.errors else "")) }}
+                            {% if form.year.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.year.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Amount Limit -->
+                    <div class="mb-4">
+                        {{ form.amount_limit.label(class="form-label fw-semibold small") }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 fw-bold">{{ currency }}</span>
+                            {{ form.amount_limit(class="form-control form-control-lg border-start-0 fw-bold fs-4" + (" is-invalid" if form.amount_limit.errors else "")) }}
+                            {% if form.amount_limit.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.amount_limit.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary-custom flex-grow-1 py-2 fw-semibold") }}
+                        <a href="{{ url_for('budgets.index') }}" class="btn btn-outline-custom py-2 px-4">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
