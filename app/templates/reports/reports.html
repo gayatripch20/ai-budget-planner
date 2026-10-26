@@ -19,7 +19,10 @@
                 <i class="bi bi-filetype-csv me-1"></i> Export CSV
             </a>
             <a href="{{ url_for('reports.export_pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-primary-custom fw-semibold">
-                <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                <i class="bi bi-file-earmark-pdf me-1"></i> Statement PDF
+            </a>
+            <a href="{{ url_for('reports.download_documentation') }}" class="btn btn-outline-dark fw-semibold" title="Academic MCA Project Documentation PDF">
+                <i class="bi bi-journal-bookmark-fill me-1"></i> Project Docs PDF
             </a>
         </div>
     </div>

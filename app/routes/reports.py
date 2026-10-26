@@ -110,3 +110,18 @@ def export_pdf():
         mimetype="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+@reports_bp.route("/documentation/pdf")
+def download_documentation():
+    """Serve the compiled MCA Project Documentation PDF."""
+    import os
+    from flask import send_file, current_app
+    pdf_path = os.path.join(current_app.root_path, "static", "docs", "MCA_PROJECT_DOCUMENTATION.pdf")
+    return send_file(
+        pdf_path,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="AI_Budget_Planner_MCA_Documentation.pdf"
+    )
+
