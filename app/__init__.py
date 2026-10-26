@@ -58,6 +58,7 @@ def create_app(config_name: str | None = None) -> Flask:
     from app.routes.budgets import budgets_bp
     from app.routes.goals import goals_bp
     from app.routes.analytics import analytics_bp
+    from app.routes.predictions import predictions_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -66,6 +67,7 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(budgets_bp)
     app.register_blueprint(goals_bp)
     app.register_blueprint(analytics_bp)
+    app.register_blueprint(predictions_bp)
 
     # Register CLI seed command for database initial categories
     register_cli_commands(app)
