@@ -4,64 +4,372 @@
 
 {% block content %}
 <div class="container py-4">
-    <!-- Welcome Header -->
-    <div class="row align-items-center mb-4">
-        <div class="col-md-8">
+    <!-- Top Action Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
             <h2 class="fw-bold mb-1">Financial Dashboard</h2>
             <p class="text-muted mb-0">
-                Welcome back, <span class="fw-semibold text-dark">{{ current_user.full_name }}</span>! Here is your personal financial overview.
+                Welcome back, <span class="fw-semibold text-dark">{{ current_user.full_name }}</span>! Financial summary for <span class="badge bg-light text-dark border">{{ current_month_name }}</span>
             </p>
         </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
-                <i class="bi bi-shield-check me-1"></i> Session Active ({{ currency }})
-            </span>
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('transactions.create_transaction', trans_type='income') }}" class="btn btn-success fw-semibold">
+                <i class="bi bi-plus-circle me-1"></i> Add Income
+            </a>
+            <a href="{{ url_for('transactions.create_transaction', trans_type='expense') }}" class="btn btn-danger fw-semibold">
+                <i class="bi bi-dash-circle me-1"></i> Add Expense
+            </a>
         </div>
     </div>
 
-    <!-- Quick Stats Placeholder for Phase 4 (Fully wired in Phase 7) -->
+    <!-- In-App Notification Alerts Feed -->
+    {% if unread_notifications %}
+    <div class="card card-custom p-3 mb-4 border-warning bg-warning-subtle" id="notifications">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-bell-fill text-warning"></i> Recent Alerts & Warnings ({{ unread_notifications|length }})
+            </h6>
+            <form action="{{ url_for('dashboard.mark_all_notifications_read') }}" method="POST" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-link btn-sm text-decoration-none text-muted p-0">
+                    Clear All Alerts
+                </button>
+            </form>
+        </div>
+        <div class="d-flex flex-column gap-2">
+            {% for notif in unread_notifications %}
+            <div class="bg-white p-2 rounded-3 border d-flex justify-content-between align-items-center">
+                <div class="small">
+                    <span class="badge bg-{{ notif.notification_type }} me-1">{{ notif.notification_type|capitalize }}</span>
+                    <strong>{{ notif.title }}</strong>: {{ notif.message }}
+                </div>
+                <form action="{{ url_for('dashboard.mark_notification_read', notif_id=notif.id) }}" method="POST" class="ms-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Dismiss">
+                        <i class="bi bi-check2"></i>
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 4 KPI Summary Cards -->
     <div class="row g-3 mb-4">
+        <!-- Monthly Income -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card card-custom p-3">
-                <div class="text-muted small text-uppercase fw-semibold mb-1">Total Income (MTD)</div>
-                <h3 class="fw-bold text-success mb-0">{{ currency }} 0.00</h3>
-                <small class="text-muted">Updated today</small>
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Monthly Income</span>
+                    <span class="bg-success-subtle text-success p-2 rounded-circle">
+                        <i class="bi bi-cash-stack fs-5"></i>
+                    </span>
+                </div>
+                <h3 class="fw-bold text-success mb-1">{{ currency }} {{ "%.2f"|format(summary.income) }}</h3>
+                <small class="text-muted">Month-to-date total</small>
             </div>
         </div>
+
+        <!-- Monthly Expenses -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card card-custom p-3">
-                <div class="text-muted small text-uppercase fw-semibold mb-1">Total Expenses (MTD)</div>
-                <h3 class="fw-bold text-danger mb-0">{{ currency }} 0.00</h3>
-                <small class="text-muted">Updated today</small>
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Monthly Expenses</span>
+                    <span class="bg-danger-subtle text-danger p-2 rounded-circle">
+                        <i class="bi bi-credit-card-2-front fs-5"></i>
+                    </span>
+                </div>
+                <h3 class="fw-bold text-danger mb-1">{{ currency }} {{ "%.2f"|format(summary.expenses) }}</h3>
+                <small class="text-muted">Month-to-date total</small>
             </div>
         </div>
+
+        <!-- Net Savings Balance -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card card-custom p-3">
-                <div class="text-muted small text-uppercase fw-semibold mb-1">Net Balance</div>
-                <h3 class="fw-bold text-primary mb-0">{{ currency }} 0.00</h3>
-                <small class="text-muted">Current surplus</small>
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Net Savings Balance</span>
+                    <span class="bg-primary-subtle text-primary p-2 rounded-circle">
+                        <i class="bi bi-wallet2 fs-5"></i>
+                    </span>
+                </div>
+                <h3 class="fw-bold {% if summary.net_savings >= 0 %}text-primary{% else %}text-danger{% endif %} mb-1">
+                    {{ currency }} {{ "%.2f"|format(summary.net_savings) }}
+                </h3>
+                <small class="text-muted">Surplus after expenses</small>
             </div>
         </div>
+
+        <!-- Savings Rate -->
         <div class="col-sm-6 col-lg-3">
-            <div class="card card-custom p-3">
-                <div class="text-muted small text-uppercase fw-semibold mb-1">Active Goals</div>
-                <h3 class="fw-bold text-info mb-0">0</h3>
-                <small class="text-muted">Milestones tracked</small>
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Savings Rate</span>
+                    <span class="bg-info-subtle text-info p-2 rounded-circle">
+                        <i class="bi bi-percent fs-5"></i>
+                    </span>
+                </div>
+                <h3 class="fw-bold text-info mb-1">{{ summary.savings_rate }}%</h3>
+                <small class="text-muted">Savings as % of income</small>
             </div>
         </div>
     </div>
 
-    <!-- Ready for Modules 5 & 6 Callout -->
-    <div class="card card-custom p-4 text-center">
-        <div class="py-3">
-            <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
-                <i class="bi bi-check2-all fs-2"></i>
+    <!-- Visualizations: Category Donut & 6-Month Comparative Trend -->
+    <div class="row g-4 mb-4">
+        <!-- Category Donut Chart -->
+        <div class="col-lg-5">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Expense by Category</h5>
+                    <span class="badge bg-light text-muted border">This Month</span>
+                </div>
+                <div class="d-flex justify-content-center align-items-center flex-grow-1" style="min-height: 250px;">
+                    <canvas id="categoryDonutChart"></canvas>
+                </div>
+                <div id="noCategoryData" class="text-center text-muted py-4 d-none">
+                    <i class="bi bi-pie-chart fs-1 text-secondary mb-2 d-block"></i>
+                    <p class="small mb-0">No expenses recorded for this month yet.</p>
+                </div>
             </div>
-            <h4 class="fw-bold">Authentication & Session System Initialized</h4>
-            <p class="text-muted mx-auto" style="max-width: 600px;">
-                Your account is securely logged in with session isolation. In the next phases, we will add income & expense management, budget limits, and financial goal tracking!
-            </p>
+        </div>
+
+        <!-- 6-Month Income vs Expense Trend -->
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">6-Month Cash Flow Trend</h5>
+                    <span class="badge bg-light text-muted border">Income vs Expenses</span>
+                </div>
+                <div class="flex-grow-1" style="min-height: 250px;">
+                    <canvas id="trendBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Budgets & Financial Goals Row -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Budget Overview -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Monthly Budget Status</h5>
+                    <a href="{{ url_for('budgets.index') }}" class="text-primary text-decoration-none small fw-semibold">
+                        View Planner <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                {% if has_budgets %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <span class="fw-bold text-dark fs-5">{{ currency }} {{ "%.2f"|format(total_budget_spent) }}</span>
+                        <span class="text-muted small">of {{ currency }} {{ "%.2f"|format(total_budget_limit) }}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar {% if budget_utilization_pct >= 100 %}bg-danger{% elif budget_utilization_pct >= 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ budget_utilization_bar }}%;">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small mt-1">
+                        <span>{{ budget_utilization_pct }}% consumed</span>
+                        <span>Remaining: {{ currency }} {{ "%.2f"|format(total_budget_limit - total_budget_spent) }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-pie-chart text-secondary fs-2 d-block mb-2"></i>
+                    <p class="small mb-2">No budget defined for this month.</p>
+                    <a href="{{ url_for('budgets.create_budget') }}" class="btn btn-outline-custom btn-sm">Set Budget</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Active Financial Goals -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Milestone Financial Goals</h5>
+                    <a href="{{ url_for('goals.index') }}" class="text-primary text-decoration-none small fw-semibold">
+                        All Goals <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                {% if active_goals %}
+                <div class="d-flex flex-column gap-3">
+                    {% for goal in active_goals %}
+                    <div class="p-2 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark">{{ goal.title }}</span>
+                            <span class="small text-muted">{{ goal.percentage_completed }}%</span>
+                        </div>
+                        <div class="progress mb-1" style="height: 6px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ goal.percentage_completed }}%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>Saved: {{ currency }} {{ "%.2f"|format(goal.current_amount) }}</span>
+                            <span>Target: {{ currency }} {{ "%.2f"|format(goal.target_amount) }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-bullseye text-secondary fs-2 d-block mb-2"></i>
+                    <p class="small mb-2">No active financial goals found.</p>
+                    <a href="{{ url_for('goals.create_goal') }}" class="btn btn-outline-custom btn-sm">Create Goal</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="card card-custom overflow-hidden">
+        <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Recent Activity</h5>
+            <a href="{{ url_for('transactions.list_transactions', trans_type='all') }}" class="text-primary text-decoration-none small fw-semibold">
+                View All Transactions <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Payment Method</th>
+                        <th class="text-end pe-4">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_transactions %}
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td class="ps-4 text-muted small">{{ tx.transaction_date.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <span class="badge rounded-pill px-2 py-1" style="background-color: {{ tx.category.color }}22; color: {{ tx.category.color }}; border: 1px solid {{ tx.category.color }}55;">
+                                    <i class="bi {{ tx.category.icon }} me-1"></i> {{ tx.category.name }}
+                                </span>
+                            </td>
+                            <td><span class="text-dark fw-medium">{{ tx.description or '—' }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ tx.payment_method }}</span></td>
+                            <td class="text-end pe-4 fw-bold">
+                                {% if tx.transaction_type == 'income' %}
+                                    <span class="text-success">+{{ currency }} {{ "%.2f"|format(tx.amount) }}</span>
+                                {% else %}
+                                    <span class="text-danger">-{{ currency }} {{ "%.2f"|format(tx.amount) }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted small">
+                                No transactions logged yet. Start by logging an income or expense!
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Parse JSON Chart Payloads
+        const categoryPayload = {{ category_chart_json|safe }};
+        const trendPayload = {{ trend_chart_json|safe }};
+
+        // 1. Render Category Donut Chart
+        if (categoryPayload.data && categoryPayload.data.length > 0) {
+            const ctxCat = document.getElementById("categoryDonutChart").getContext("2d");
+            new Chart(ctxCat, {
+                type: "doughnut",
+                data: {
+                    labels: categoryPayload.labels,
+                    datasets: [{
+                        data: categoryPayload.data,
+                        backgroundColor: categoryPayload.colors,
+                        borderWidth: 2,
+                        borderColor: "#ffffff",
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: {{ currency }} ${context.parsed.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: "68%"
+                }
+            });
+        } else {
+            document.getElementById("categoryDonutChart").classList.add("d-none");
+            document.getElementById("noCategoryData").classList.remove("d-none");
+        }
+
+        // 2. Render 6-Month Income vs Expense Trend Bar Chart
+        if (trendPayload.labels && trendPayload.labels.length > 0) {
+            const ctxTrend = document.getElementById("trendBarChart").getContext("2d");
+            new Chart(ctxTrend, {
+                type: "bar",
+                data: {
+                    labels: trendPayload.labels,
+                    datasets: [
+                        {
+                            label: "Income",
+                            data: trendPayload.income,
+                            backgroundColor: "#1cc88a",
+                            borderRadius: 4,
+                        },
+                        {
+                            label: "Expenses",
+                            data: trendPayload.expenses,
+                            backgroundColor: "#e74a3b",
+                            borderRadius: 4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { return "{{ currency }} " + value; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: "top", labels: { boxWidth: 12 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: {{ currency }} ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

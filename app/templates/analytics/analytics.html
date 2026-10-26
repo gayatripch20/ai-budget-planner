@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Analytics{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Bar: Title & Month Selector -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="bi bi-graph-up text-warning me-2"></i> Financial Analytics
+            </h2>
+            <p class="text-muted mb-0">Multi-dimensional spending trends, category distributions, and budget comparisons</p>
+        </div>
+
+        <!-- Month & Year Filter Form -->
+        <form method="GET" class="d-flex align-items-center gap-2">
+            <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for m in range(1, 13) %}
+                <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+                    {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
+                {% for y in range(2024, 2030) %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <!-- 4 KPI Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Monthly Income</span>
+                <h3 class="fw-bold text-success mb-1">{{ currency }} {{ "%.2f"|format(summary.income) }}</h3>
+                <small class="text-muted">Total earned in period</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Monthly Expenses</span>
+                <h3 class="fw-bold text-danger mb-1">{{ currency }} {{ "%.2f"|format(summary.expenses) }}</h3>
+                <small class="text-muted">Total outflows</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">Savings Rate</span>
+                <h3 class="fw-bold text-info mb-1">{{ summary.savings_rate }}%</h3>
+                <small class="text-muted">Surplus retention ratio</small>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 h-100">
+                <span class="text-muted small text-uppercase fw-semibold">MoM Expense Variance</span>
+                <h3 class="fw-bold {% if mom_variance.is_increase %}text-danger{% else %}text-success{% endif %} mb-1">
+                    {% if mom_variance.is_increase %}+{% endif %}{{ mom_variance.percentage_change }}%
+                </h3>
+                <small class="text-muted">
+                    {% if mom_variance.is_increase %}
+                        <i class="bi bi-arrow-up-right text-danger"></i> Higher than prev month
+                    {% else %}
+                        <i class="bi bi-arrow-down-right text-success"></i> Lower than prev month
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 1 Charts: Trend & Category Donut -->
+    <div class="row g-4 mb-4">
+        <!-- 6-Month Income vs Expense Trend -->
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">6-Month Trend Overview</h5>
+                    <span class="badge bg-light text-muted border">Income vs Expense</span>
+                </div>
+                <div style="height: 300px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Spending Donut -->
+        <div class="col-lg-5">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Category Breakdown</h5>
+                    <span class="badge bg-light text-muted border">Selected Month</span>
+                </div>
+                <div class="d-flex justify-content-center align-items-center" style="height: 250px;">
+                    <canvas id="categoryDonutChart"></canvas>
+                </div>
+                <div id="noCategoryData" class="text-center text-muted py-4 d-none">
+                    <i class="bi bi-pie-chart fs-1 text-secondary mb-2 d-block"></i>
+                    <p class="small mb-0">No expenses recorded for this month.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2 Charts: Budget Performance & Top Categories Table -->
+    <div class="row g-4 mb-4">
+        <!-- Budget vs Actual Spending -->
+        <div class="col-lg-7">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Budget vs. Actual Spending</h5>
+                    <span class="badge bg-light text-muted border">Planned vs Spent</span>
+                </div>
+                <div id="budgetChartContainer" style="height: 280px;">
+                    <canvas id="budgetPerformanceChart"></canvas>
+                </div>
+                <div id="noBudgetData" class="text-center text-muted py-5 d-none">
+                    <i class="bi bi-bar-chart-line fs-1 text-secondary mb-2 d-block"></i>
+                    <p class="small mb-0">No category budgets defined for this month.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Spending Categories Table -->
+        <div class="col-lg-5">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3">Highest Expense Categories</h5>
+                {% if category_breakdown.categories %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-end">Amount</th>
+                                <th class="text-end">% Share</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in category_breakdown.categories[:5] %}
+                            <tr>
+                                <td>
+                                    <span class="badge rounded-pill me-1" style="background-color: {{ cat.color }}; width: 10px; height: 10px; display: inline-block;"></span>
+                                    <span class="fw-medium text-dark">{{ cat.name }}</span>
+                                </td>
+                                <td class="text-end fw-bold">{{ currency }} {{ "%.2f"|format(cat.amount) }}</td>
+                                <td class="text-end text-muted">{{ cat.percentage }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4 small">
+                    No expense data available for this period.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const trendPayload = {{ trend_chart_json|safe }};
+        const categoryPayload = {{ category_chart_json|safe }};
+        const budgetPayload = {{ budget_chart_json|safe }};
+
+        // 1. Trend Chart
+        if (trendPayload.labels && trendPayload.labels.length > 0) {
+            new Chart(document.getElementById("trendChart").getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: trendPayload.labels,
+                    datasets: [
+                        {
+                            label: "Income",
+                            data: trendPayload.income,
+                            borderColor: "#1cc88a",
+                            backgroundColor: "rgba(28, 200, 138, 0.1)",
+                            tension: 0.3,
+                            fill: true,
+                        },
+                        {
+                            label: "Expenses",
+                            data: trendPayload.expenses,
+                            borderColor: "#e74a3b",
+                            backgroundColor: "rgba(231, 74, 59, 0.1)",
+                            tension: 0.3,
+                            fill: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function(val) { return "{{ currency }} " + val; } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Category Donut Chart
+        if (categoryPayload.data && categoryPayload.data.length > 0) {
+            new Chart(document.getElementById("categoryDonutChart").getContext("2d"), {
+                type: "doughnut",
+                data: {
+                    labels: categoryPayload.labels,
+                    datasets: [{
+                        data: categoryPayload.data,
+                        backgroundColor: categoryPayload.colors,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: "65%"
+                }
+            });
+        } else {
+            document.getElementById("categoryDonutChart").classList.add("d-none");
+            document.getElementById("noCategoryData").classList.remove("d-none");
+        }
+
+        // 3. Budget vs Actual Horizontal Bar Chart
+        if (budgetPayload.labels && budgetPayload.labels.length > 0) {
+            new Chart(document.getElementById("budgetPerformanceChart").getContext("2d"), {
+                type: "bar",
+                data: {
+                    labels: budgetPayload.labels,
+                    datasets: [
+                        {
+                            label: "Budget Limit",
+                            data: budgetPayload.allocated,
+                            backgroundColor: "#4e73df",
+                            borderRadius: 4,
+                        },
+                        {
+                            label: "Actual Spent",
+                            data: budgetPayload.actual,
+                            backgroundColor: "#e74a3b",
+                            borderRadius: 4,
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { callback: function(val) { return "{{ currency }} " + val; } }
+                        }
+                    }
+                }
+            });
+        } else {
+            document.getElementById("budgetPerformanceChart").classList.add("d-none");
+            document.getElementById("noBudgetData").classList.remove("d-none");
+        }
+    });
+</script>
+{% endblock %}
